@@ -5,7 +5,7 @@
 
 class Plant: public Ingredient {
 private:
-    double vitalitate, timpMax;
+    double vitalitate, timpMax; ///O planta are doua atribute specifice
     double calculSpecific(double temp, double umid, double timp) const override;
     double calculValoare() const override;
     void print(std::ostream& os) const override;

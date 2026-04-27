@@ -4,8 +4,9 @@ Plant::Plant(const std::string& nume, double potentaBaza, ElementType element, d
     : Ingredient(nume, potentaBaza, element), vitalitate(vitalitate), timpMax(timpMax) {}
 
 double Plant::calculSpecific(double temp, double umid, double timp) const {
-    double timpRamas = timp - timpMax;
+    double timpRamas = timp - timpMax; ///daca fierbem/prelucram planta prea mult timp, incepe sa piarda din potenta
     if(0.0 > timpRamas) timpRamas = 0.0;
+    if(temp==0) return 0; ///ca sa evitam division by zero error
     double finalvitalitate = vitalitate * (100.0 / temp) * umid;
     return getPotentaBaza() + finalvitalitate - timpRamas;
 }
@@ -19,5 +20,5 @@ void Plant::print(std::ostream& os) const {
 }
 
 std::unique_ptr<Ingredient> Plant::clone() const {
-    return std::make_unique<Plant>(*this);
+    return std::make_unique<Plant>(*this); ///copiatorul special pentru unique_ptr.
 }

@@ -5,8 +5,7 @@
 
 class MagicEssence : public Ingredient{
 private:
-    double concentratie;
-    double stabilitate;
+    double concentratie,stabilitate; ///Acestea sunt atributele specifice pentru esentele magice
     double calculSpecific(double temp, double umid, double timp) const override;
     double calculValoare() const override;
     void print(std::ostream& os) const override;

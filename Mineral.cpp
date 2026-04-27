@@ -5,13 +5,13 @@ Mineral::Mineral(const std::string& nume, double potentaBaza, ElementType elemen
     : Ingredient(nume, potentaBaza, element), duritate(duritate), puritate(puritate){}
 
 double Mineral::calculSpecific(double temp, double umid, double timp) const {
-    if(temp<duritate*10)
+    if(temp<duritate*10) ///Pentru minerale e nevoie sa le prelucram la o temperatura minima ca sa se topeasca/sparga/etc.
         return 0;
     return getPotentaBaza()*puritate;
 }
 
 double Mineral::calculValoare() const {
-    return getPotentaBaza()*std::pow(puritate,10.0);
+    return getPotentaBaza()*std::pow(puritate,10.0); ///puritatea in % da mineralului valoarea, insa nu e o functie liniara ci exponentiala.
 }
 
 void Mineral::print(std::ostream& os) const {

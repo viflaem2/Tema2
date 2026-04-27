@@ -6,3 +6,4 @@ layout/
 *.cbp
 bin/
 obj/
+*.depend

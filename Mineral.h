@@ -5,7 +5,7 @@
 
 class Mineral: public Ingredient{
 private:
-    double duritate, puritate;
+    double duritate, puritate; ///Mineralele au aceste 2 atribute specifice
     double calculSpecific(double temp, double umid, double timp) const override;
     double calculValoare() const override;
     void print(std::ostream& os) const override;
