@@ -1,4 +1,4 @@
-# Tema 2 - Alchemy Potion Game
+# Tema 2 și 3 - Alchemy Potion Game
 
 Proiectul este o aplicație C++ în consolă care simulează prepararea unor poțiuni într-un cazan. Ideea de bază este că jucătorul combină ingrediente de tipuri diferite, iar programul calculează dacă poțiunea rezultată este validă, toxică, inutilizabilă sau dacă procesul produce o explozie.
 
@@ -142,5 +142,80 @@ Esenta: Salvie
 Temperatura: 100
 Umiditate: 0.8
 Timp: 5
+```
+## Update Tema 3
+
+Pentru Tema 3 am păstrat logica jocului din Tema 2 și am adăugat partea cerută de design patterns și templates. Nu am schimbat mecanica principală a jocului: ingredientele se adaugă în cazan, cazanul verifică rețeta, calculează potența și aruncă excepții în cazurile speciale. Modificările au fost făcute mai mult pentru organizarea codului și pentru reducerea redundanței.
+
+### Factory - `IngredientFactory`
+
+Am adăugat `IngredientFactory` pentru crearea ingredientelor. În Tema 2, logica de creare pentru plante, minerale și esențe era în `main.cpp`, ceea ce făcea fișierul principal cam aglomerat. Acum `main.cpp` nu mai creează direct obiecte de tip `Plant`, `Mineral` sau `MagicEssence`, ci cere un `std::unique_ptr<Ingredient>` de la factory.
+
+Factory-ul are metode precum:
+
+```cpp
+IngredientFactory::creeazaPlanta(...)
+IngredientFactory::creeazaMineral(...)
+IngredientFactory::creeazaEsenta(...)
+```
+
+Astfel, logica de creare este ținută într-un singur loc și codul din `main.cpp` rămâne mai curat.
+
+### Singleton - `ErrorManager`
+
+Am adăugat `ErrorManager` ca Singleton pentru a centraliza erorile apărute în timpul rulării. Excepțiile existau deja și sunt tratate în continuare cu `try/catch`, deci nu am înlocuit error handling-ul vechi. Diferența este că acum, atunci când o excepție este prinsă, mesajul este și salvat într-un jurnal de erori.
+
+La finalul demo-ului, jurnalul poate fi afișat cu:
+
+```cpp
+ErrorManager::getInstance().afiseazaErori();
+```
+
+Am ales Singleton deoarece are sens să existe o singură zonă responsabilă de istoricul erorilor.
+
+### Clasă template - `Raft<T>`
+
+Am adăugat clasa template `Raft<T>`, folosită ca un container generic pentru obiecte din joc. În loc să folosesc direct `std::vector<Potiune>` în `main.cpp`, folosesc:
+
+```cpp
+Raft<Potiune>
+```
+
+Pentru a arăta că template-ul funcționează și cu alt tip, am folosit și:
+
+```cpp
+Raft<std::unique_ptr<Ingredient>>
+```
+
+Astfel, `Raft<T>` poate reprezenta atât un raft de poțiuni create, cât și un raft de mostre de ingrediente.
+
+### Funcție template - `totalizeaza()`
+
+Am adăugat și funcția template `totalizeaza()`. Ea primește un container și o funcție/lambda care extrage o valoare numerică din fiecare element. O folosesc pentru două lucruri:
+
+- calcularea scorului total al poțiunilor;
+- calcularea valorii totale a mostrelor de ingrediente.
+
+Exemplu:
+
+```cpp
+double scorTotal(const Raft<Potiune>& raft) {
+    return totalizeaza(raft, [](const Potiune& p) {
+        return p.valoareMonetara;
+    });
+}
+```
+
+### Fișiere adăugate
+
+Pentru Tema 3 au fost adăugate/updatate următoarele fișiere:
+
+```txt
+IngredientFactory.h
+IngredientFactory.cpp
+ErrorManager.h
+ErrorManager.cpp
+Raft.h
+main.cpp
 ```
 
