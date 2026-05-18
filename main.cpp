@@ -7,72 +7,11 @@
 #include <utility>
 
 #include "Cazan.h"
-#include "Plant.h"
-#include "Mineral.h"
-#include "MagicEssence.h"
 #include "AlchemyExceptions.h"
+#include "IngredientFactory.h"
+#include "ErrorManager.h"
+#include "Raft.h"
 
-int seedDinNume(const std::string& nume) {
-    int seed=0;
-    for(char c:nume) {seed=seed*31+c;}
-    if(seed<0) seed=-seed;
-    return seed;
-} ///proprietatile ingredientului sunt generate randomly folosind numele ca seed.
-
-double randomDouble(double st, double dr) {
-    return st+(double)rand()/RAND_MAX*(dr-st);
-}
-
-ElementType randomElement() {
-    int x=rand()%6;
-    switch(x) {
-        case 0: return ElementType::Fire;
-        case 1: return ElementType::Water;
-        case 2: return ElementType::Air;
-        case 3: return ElementType::Ground;
-        case 4: return ElementType::Light;
-        default: return ElementType::Darkness;
-    }
-}
-
-std::unique_ptr<Ingredient> creeazaPlanta(std::string nume="") {
-    if(nume=="") {
-        std::cout<<"Nume planta: ";
-        std::cin>>nume;
-    }
-    srand(seedDinNume(nume));
-    double potenta=randomDouble(5.0,25.0);
-    ElementType element=randomElement();
-    double vitalitate=randomDouble(1.0,10.0);
-    double timpMax=randomDouble(5.0,30.0);
-    return std::make_unique<Plant>(nume,potenta,element,vitalitate,timpMax);
-}
-
-std::unique_ptr<Ingredient> creeazaMineral(std::string nume="") {
-    if(nume=="") {
-        std::cout<<"Nume mineral: ";
-        std::cin>>nume;
-    }
-    srand(seedDinNume(nume));
-    double potenta=randomDouble(5.0,25.0);
-    ElementType element=randomElement();
-    double duritate=randomDouble(1.0,10.0);
-    double puritate=randomDouble(0.4,1.0);
-    return std::make_unique<Mineral>(nume,potenta,element,duritate,puritate);
-}
-
-std::unique_ptr<Ingredient> creeazaEsenta(std::string nume="") {
-    if(nume=="") {
-        std::cout<<"Nume esenta: ";
-        std::cin>>nume;
-    }
-    srand(seedDinNume(nume));
-    double potenta=randomDouble(5.0,25.0);
-    ElementType element=randomElement();
-    double concentratie=randomDouble(0.2,1.0);
-    double stabilitate=randomDouble(10.0,100.0);
-    return std::make_unique<MagicEssence>(nume,potenta,element,concentratie,stabilitate);
-}
 
 void afiseazaPotiune(const Potiune& p) {
     std::cout<<"Potenta: "<<p.potenta<<'\n';
@@ -83,47 +22,51 @@ void afiseazaPotiune(const Potiune& p) {
     if(p.esenta) std::cout<<"-"<<*p.esenta;
 }
 
-void afiseazaRaft(const std::vector<Potiune>& raft) {
-    if(raft.empty()) {
+void afiseazaRaft(const Raft<Potiune>& raft) {
+    if(raft.esteGol()) {
         std::cout<<"Raftul este gol.\n";
         return;
     }
-    for(size_t i=0; i<raft.size(); i++) {
+    for(size_t i=0; i<raft.dimensiune(); i++) {
         std::cout<<"Potiunea "<<i+1<<":\n";
         afiseazaPotiune(raft[i]);
         std::cout<<'\n';
     }
 } ///Raftul cu potiuni
 
-double scorTotal(const std::vector<Potiune>& raft) {
-    double s=0.0;
-    for(const auto& p:raft) {s+=p.valoareMonetara;}
-    return s;
+double scorTotal(const Raft<Potiune>& raft) {
+    return totalizeaza(raft, [](const Potiune& p) {
+        return p.valoareMonetara;
+    });
 }
 
-void incearca(Cazan& c, std::vector<Potiune>& raft, double temp, double umid, double timp) { ///Incercam sa facem o potiune si prindem erori daca apar
+void incearca(Cazan& c, Raft<Potiune>& raft, double temp, double umid, double timp) { ///Incercam sa facem o potiune si prindem erori daca apar
     try {
         Potiune p=c.preparaPotiune(temp,umid,timp);
         std::cout<<"Potiunea a fost creata.\n";
         afiseazaPotiune(p);
-        raft.push_back(std::move(p));
+        raft.adauga(std::move(p));
     }
     catch(const AlchemyExplosionException& e) {
+        ErrorManager::getInstance().adaugaEroare(e.what());
         std::cout<<e.what()<<'\n';
         c.golesteCazan();
         std::cout<<"Cazanul a fost golit dupa esec.\n";
     }
     catch(const ToxicSludgeException& e) {
+        ErrorManager::getInstance().adaugaEroare(e.what());
         std::cout<<e.what()<<'\n';
         c.golesteCazan();
         std::cout<<"Cazanul a fost golit dupa esec.\n";
     }
     catch(const PotionFailureException& e) {
+        ErrorManager::getInstance().adaugaEroare(e.what());
         std::cout<<e.what()<<'\n';
         c.golesteCazan();
         std::cout<<"Cazanul a fost golit dupa esec.\n";
     }
     catch(const std::exception& e) {
+        ErrorManager::getInstance().adaugaEroare(e.what());
         std::cout<<e.what()<<'\n';
         c.golesteCazan();
         std::cout<<"Cazanul a fost golit dupa esec.\n";
@@ -131,13 +74,13 @@ void incearca(Cazan& c, std::vector<Potiune>& raft, double temp, double umid, do
 }
 
 void adaugaRetetaDemo(Cazan& c) {
-    c.adaugaIngredient(creeazaPlanta("Mandragora"));
-    c.adaugaIngredient(creeazaMineral("Cristal"));
-    c.adaugaIngredient(creeazaEsenta("Salvie"));
+    c.adaugaIngredient(IngredientFactory::creeazaPlanta("Mandragora"));
+    c.adaugaIngredient(IngredientFactory::creeazaMineral("Cristal"));
+    c.adaugaIngredient(IngredientFactory::creeazaEsenta("Salvie"));
 }
 
 void modDemo() { ///Un demo cu valori hardcodate care arata aproximativ toate functionalitatile jocului
-    std::vector<Potiune> raft;
+    Raft<Potiune> raft;
     Cazan c(100000);
     std::cout<<"Demo\n";
     std::cout<<"\nDemo potiune valida:\n";
@@ -149,9 +92,9 @@ void modDemo() { ///Un demo cu valori hardcodate care arata aproximativ toate fu
     incearca(c,raft,100,0.8,5);
     std::cout<<"\nDemo ingrediente gresite:\n";
     c.golesteCazan();
-    c.adaugaIngredient(creeazaPlanta("A"));
-    c.adaugaIngredient(creeazaPlanta("B"));
-    c.adaugaIngredient(creeazaEsenta("C"));
+    c.adaugaIngredient(IngredientFactory::creeazaPlanta("A"));
+    c.adaugaIngredient(IngredientFactory::creeazaPlanta("B"));
+    c.adaugaIngredient(IngredientFactory::creeazaEsenta("C"));
     c.afiseazaContinut();
     incearca(c,raft,100,0.8,5);
     std::cout<<"\nDemo mineral care nu se topeste:\n";
@@ -189,26 +132,36 @@ void modDemo() { ///Un demo cu valori hardcodate care arata aproximativ toate fu
     std::cout<<"Ingrediente create: "<<Ingredient::getNumarTotalIngrediente()<<'\n';
     std::cout<<"\nRaft:\n";
     afiseazaRaft(raft);
+    Raft<std::unique_ptr<Ingredient>> mostre;
+    mostre.adauga(IngredientFactory::creeazaPlanta("Lotus"));
+    mostre.adauga(IngredientFactory::creeazaMineral("Obsidian"));
+    std::cout<<"\nValoare mostre: "
+             <<totalizeaza(mostre, [](const std::unique_ptr<Ingredient>& ing) {
+                 if(!ing) return 0.0;
+                 return ing->calculeazaPretVanzare();
+             })<<'\n';
+    std::cout<<"\nJurnal erori:\n";
+    ErrorManager::getInstance().afiseazaErori();
 }
 
 void modInteractiv() {
     Cazan c(100000);
-    std::vector<Potiune> raft;
+    Raft<Potiune> raft;
     int op;
     do {
         std::cout<<"1.Planta 2.Mineral 3.Esenta 4.Afisare cazan 5.Prepara 6.Raft 7.Scor 8.Goleste 0.Exit\n";
         std::cout<<"Optiune: ";
         std::cin>>op;
         if(op==1) {
-            c.adaugaIngredient(creeazaPlanta());
+            c.adaugaIngredient(IngredientFactory::creeazaPlanta());
             std::cout<<"Planta a fost adaugata.\n";
         }
         else if(op==2) {
-            c.adaugaIngredient(creeazaMineral());
+            c.adaugaIngredient(IngredientFactory::creeazaMineral());
             std::cout<<"Mineralul a fost adaugat.\n";
         }
         else if(op==3) {
-            c.adaugaIngredient(creeazaEsenta());
+            c.adaugaIngredient(IngredientFactory::creeazaEsenta());
             std::cout<<"Esenta magica a fost adaugata.\n";
         }
         else if(op==4) {c.afiseazaContinut();}
